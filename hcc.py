@@ -24,11 +24,11 @@ player_pref = pd.read_csv(StringIO(player_pref_data), header=0)
 priorities = pd.read_csv(StringIO(priorities_data), header=0)
 
 #format for accessing data by index: player_pref.loc['ty', 'hero1']
- 
 sql_hero = "INSERT INTO hero_details (hero_name, tier, role, melee_ranged, core_role, lane, ww1, ww2, ww3) VALUES (?,?,?,?,?,?,?,?,?)"
 sql_player = "INSERT INTO player_pref (player_name, hero1, hero2, hero3, hero4, hero5) VALUES (?,?,?,?,?,?)"
 sql_priorities = "INSERT INTO priorities (hero_name, ty, wisnu, kat, mark, flick) VALUES (?,?,?,?,?,?)"
 
+# Function that creates the database if it doesn't already exist or needs to be updated
 def createDatabase():
 	con = lite.connect('./db/hcc.db')
 	cur = con.cursor()
@@ -40,6 +40,7 @@ def createDatabase():
 		cur.execute("CREATE TABLE hero_details (hero_name TEXT PRIMARY KEY, tier INT, role TEXT, melee_ranged TEXT, core_role TEXT, lane INT, ww1 TEXT, ww2 TEXT, ww3 TEXT)")
 		cur.execute("CREATE TABLE priorities (hero_name TEXT, ty INT, wisnu INT, kat INT, mark INT, flick INT)")
 
+# Function that populates the tables in the database if they didn't exist or need to be updated
 def populateTables():
 	con = lite.connect('./db/hcc.db')
 	cur = con.cursor()
@@ -53,16 +54,20 @@ def populateTables():
 		for idx, player in player_pref.iterrows():
 			cur.execute(sql_player, (player['player_name'], player['hero1'], player['hero2'], player['hero3'], player['hero4'], player['hero5']))
 
+		# Populate the priorities table in the sql database hcc.db
 		for idx, hero in priorities.iterrows():
 			cur.execute(sql_priorities, (hero['hero_name'], hero['ty'], hero['wisnu'], hero['kat'], hero['mark'], hero['flick']))
 
-# Now the database should be populated with what is on our google doc, and we can actually start pulling what we need out of it
 
+# Now the database should be populated with what is on our google doc, and we can actually start pulling what we need out of it
 def calcTeam():
 	con = lite.connect('./db/hcc.db')
 	cur = con.cursor()
 	
-	return pd.read_sql_query("select hero_details.hero_name, tier, role from hero_details join priorities on (hero_details.hero_name = priorities.hero_name) where tier in (1,2) and role in ('assassin', 'warrior', 'support') and (ty = 1 or wisnu = 1 or kat = 1 or mark = 1 or flick = 1)", con)
+	return pd.read_sql_query("select hero_details.hero_name, tier, role from hero_details join priorities on (hero_details.hero_name = priorities.hero_name) where tier in (1,2) and role in ('assassin', 'warrior', 'support') and (ty = 1 or wisnu = 1 or kat = 1 or mark = 1 or flick = 1)", con) 
+		# This ended up returning Muradin and Malfurion, and I hacked the rest together using sql queries. I will keep working on this so that the script will know what to look for and how to query it after the first pass.
+
+
 
 
 
